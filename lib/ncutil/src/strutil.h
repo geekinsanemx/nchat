@@ -35,6 +35,7 @@ public:
   static std::string NumAddPrefix(const std::string& p_Str, const char p_Ch);
   static bool NumHasPrefix(const std::string& p_Str, const char p_Ch);
   static void ReplaceString(std::string& p_Str, const std::string& p_Search, const std::string& p_Replace);
+  static std::string ShellEscape(const std::string& p_Str);
   static std::vector<std::string> Split(const std::string& p_Str, char p_Sep);
   static bool StartsWith(const std::string& p_String, const std::string& p_Prefix);
   static std::string StrFromHex(const std::string& p_String);

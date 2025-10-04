@@ -78,7 +78,7 @@ bool WmChat::SetupProfile(const std::string& p_ProfilesDir, std::string& p_Profi
   m_ProfileId = m_ProfileId + "_" + phoneNumber;
   std::string profileDir = p_ProfilesDir + "/" + m_ProfileId;
 
-  mkdir(profileDir.c_str(), 0777);
+  mkdir(profileDir.c_str(), 0700);
 
   p_ProfileId = m_ProfileId;
 
