@@ -279,6 +279,23 @@ void StrUtil::ReplaceString(std::string& p_Str, const std::string& p_Search, con
   }
 }
 
+std::string StrUtil::ShellEscape(const std::string& p_Str)
+{
+  std::string escaped;
+  for (char c : p_Str)
+  {
+    if (c == '\'')
+    {
+      escaped += "'\\''";
+    }
+    else
+    {
+      escaped += c;
+    }
+  }
+  return "'" + escaped + "'";
+}
+
 std::vector<std::string> StrUtil::Split(const std::string& p_Str, char p_Sep)
 {
   std::vector<std::string> vec;

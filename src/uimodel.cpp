@@ -933,7 +933,8 @@ void UiModel::Impl::OnKeyOpenMsg()
     std::string messageOpenCommand = UiConfig::GetStr("message_open_command");
     if (messageOpenCommand.empty())
     {
-      messageOpenCommand = std::string(getenv("PAGER") ? getenv("PAGER") : "less");
+      const char* pagerEnv = getenv("PAGER");
+      messageOpenCommand = std::string(pagerEnv ? pagerEnv : "less");
     }
 
     return messageOpenCommand;
@@ -951,7 +952,7 @@ void UiModel::Impl::OnKeyOpenMsg()
   const ChatMessage& chatMessage = messages.at(messageId);
 
   endwin();
-  std::string tempPath = FileUtil::GetApplicationDir() + "/tmpview.txt";
+  std::string tempPath = FileUtil::MkTempFile();
   FileUtil::WriteFile(tempPath, chatMessage.text);
 
   const std::string cmd = openCmd + " " + tempPath;
@@ -1058,7 +1059,7 @@ void UiModel::Impl::OpenLink(const std::string& p_Url)
   }();
 
   std::string cmd = cmdTemplate;
-  StrUtil::ReplaceString(cmd, "%1", p_Url);
+  StrUtil::ReplaceString(cmd, "%1", StrUtil::ShellEscape(p_Url));
 
   RunProgram(cmd);
 }
@@ -1081,7 +1082,7 @@ void UiModel::Impl::OpenAttachment(const std::string& p_Path)
   }();
 
   std::string cmd = cmdTemplate;
-  StrUtil::ReplaceString(cmd, "%1", p_Path);
+  StrUtil::ReplaceString(cmd, "%1", StrUtil::ShellEscape(p_Path));
 
   RunProgram(cmd);
 }
@@ -2711,20 +2712,10 @@ void UiModel::Impl::DesktopNotify(const std::string& p_Name, const std::string& 
 
   if (cmdTemplate.empty()) return;
 
-  // clean up sender name and text
-  std::string name = p_Name;
-  std::string text = p_Text;
-  name.erase(remove_if(name.begin(), name.end(),
-                       [](char c) { return ((c == '\'') || (c == '%') || (c == '"')); }),
-             name.end());
-  text.erase(remove_if(text.begin(), text.end(),
-                       [](char c) { return ((c == '\'') || (c == '%') || (c == '"')); }),
-             text.end());
-
-  // insert sender name and text into command
+  // insert sender name and text into command with proper shell escaping
   std::string cmd = cmdTemplate;
-  StrUtil::ReplaceString(cmd, "%1", name);
-  StrUtil::ReplaceString(cmd, "%2", text);
+  StrUtil::ReplaceString(cmd, "%1", StrUtil::ShellEscape(p_Name));
+  StrUtil::ReplaceString(cmd, "%2", StrUtil::ShellEscape(p_Text));
 
   // run command
   RunCommand(cmd);
@@ -3142,7 +3133,8 @@ void UiModel::Impl::OnKeyExtEdit()
     std::string messageEditCommand = UiConfig::GetStr("message_edit_command");
     if (messageEditCommand.empty())
     {
-      messageEditCommand = std::string(getenv("EDITOR") ? getenv("EDITOR") : "nano");
+      const char* editorEnv = getenv("EDITOR");
+      messageEditCommand = std::string(editorEnv ? editorEnv : "nano");
     }
 
     return messageEditCommand;
@@ -3160,7 +3152,7 @@ void UiModel::Impl::CallExternalEdit(const std::string& p_EditorCmd)
   int& entryPos = m_EntryPos[profileId][chatId];
 
   endwin();
-  std::string tempPath = FileUtil::GetApplicationDir() + "/tmpcompose.txt";
+  std::string tempPath = FileUtil::MkTempFile();
   std::string composeStr = StrUtil::ToString(entryStr);
   FileUtil::WriteFile(tempPath, composeStr);
   const std::string cmd = p_EditorCmd + " " + tempPath;
@@ -3236,7 +3228,7 @@ void UiModel::Impl::StartExtCall(const std::string& p_Phone)
   }();
 
   std::string cmd = cmdTemplate;
-  StrUtil::ReplaceString(cmd, "%1", p_Phone);
+  StrUtil::ReplaceString(cmd, "%1", StrUtil::ShellEscape(p_Phone));
 
   RunProgram(cmd);
 }
@@ -3786,7 +3778,7 @@ bool UiModel::Impl::AutoCompose()
   StrUtil::ReplaceString(selfName, "\n", " ");
   historyStr += selfName + ":\n";
 
-  std::string tempPath = FileUtil::GetApplicationDir() + "/tmphistory.txt";
+  std::string tempPath = FileUtil::MkTempFile();
   FileUtil::WriteFile(tempPath, historyStr);
 
   static const std::string cmdTemplate = []()
@@ -3803,7 +3795,7 @@ bool UiModel::Impl::AutoCompose()
 
   std::string str;
   std::string cmd = cmdTemplate;
-  StrUtil::ReplaceString(cmd, "%1", tempPath);
+  StrUtil::ReplaceString(cmd, "%1", StrUtil::ShellEscape(tempPath));
   const bool rv = RunCommand(cmd, &str);
   if (rv)
   {
@@ -4483,7 +4475,7 @@ std::vector<std::string> UiModel::SelectFile()
     endwin();
     std::string outPath = FileUtil::MkTempFile();
     std::string cmd = "2>&1 " + filePickerCommand;
-    StrUtil::ReplaceString(cmd, "%1", outPath);
+    StrUtil::ReplaceString(cmd, "%1", StrUtil::ShellEscape(outPath));
 
     // run command
     LOG_TRACE("cmd \"%s\" start", cmd.c_str());
